@@ -1,0 +1,61 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "greeter api",
+    "version": "1.0",
+    "contact": {
+      "name": "Govinda Attal",
+      "url": "https://github.com/govinda-attal/istio-me",
+      "email": "govinda.attal@gmail.com"
+    }
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/hello/{name}": {
+      "get": {
+        "operationId": "Hello",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/trialsHelloRs"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Greeter"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "trialsHelloRs": {
+      "type": "object",
+      "properties": {
+        "msg": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "externalDocs": {
+    "url": "https://github.com/govinda-attal/istio-me"
+  }
+}

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option go_package = "github.com/govinda-attal/istio-me/pkg/trials";
+package trials;
+
+import "google/protobuf/empty.proto";
+
+service Timer {
+    rpc Time (google.protobuf.Empty) returns (TimeRs);
+}
+
+message TimeRs {
+	string msg = 1;
+}

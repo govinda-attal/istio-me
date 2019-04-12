@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+option go_package = "github.com/govinda-attal/istio-me/pkg/trials";
+package trials;
+
+// import "google/api/annotations.proto";
+// import "protoc-gen-swagger/options/annotations.proto";
+
+// option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+// 	info: {
+// 		title: "greeter api";
+// 		version: "1.0";
+// 		contact: {
+// 			name: "Govinda Attal";
+// 			url: "https://github.com/govinda-attal/istio-me";
+// 			email: "govinda.attal@gmail.com";
+// 		};
+// 	}
+// 	external_docs: {
+// 		url: "https://github.com/govinda-attal/istio-me";
+// 	}
+// 	schemes: HTTP;
+// 	schemes: HTTPS;
+// 	consumes: "application/json";
+// 	produces: "application/json";   
+		
+// };
+
+service Greeter {
+    rpc Hello (HelloRq) returns (HelloRs){
+        // option (google.api.http) = {
+		// 	get: "/v1/hello/{name}"
+        // };
+    }
+}
+
+message HelloRq {
+	string name = 1;
+}
+
+message HelloRs {
+	string msg = 1;
+}
