@@ -1,6 +1,9 @@
 .PHONY: compile_proto generate_gw generate_swagger
 
+include .env
+export $(shell sed 's/=.*//' .env)
 
+TAG?=$(shell git rev-list HEAD --max-count=1 --abbrev-commit)
 
 compile_proto:
 	cd api/; protoc -I. -I=$(GOPATH)/src/github.com/protocolbuffers/protobuf/src \
@@ -44,30 +47,31 @@ test: install
 
 build: 
 	rm -rf ./dist
-	mkdir dist
-	mkdir dist/config
-	mkdir dist/api
+	mkdir -p dist/config
+	mkdir -p dist/api
 	GOOS=linux GOARCH=amd64 go build -o ./dist/$(APP_NAME) .
-	cp ./test/fixtures/app-config-local.yaml ./dist/config/app-config.yaml
+	cp ./test/fixtures/config.yaml ./dist/config.yaml
 	cp ./api/*.json ./dist/api/
 
 local-providers-start:
 	docker-compose up db adminer redis swagger-ui
 
 
-local-serve: build
-	cd dist && ./$(APP_NAME) serve
+serve: build
+	cd dist && ./$(APP_NAME) greet
 
 clean:
 	rm ./dist/ -rf
 
 pack:
-	docker build --build-arg APP_NAME=$(APP_NAME) -t gattal/$(APP_NAME):$(TAG) .
+	docker build -t gattal/$(APP_NAME):$(TAG) .
+	docker tag gattal/$(APP_NAME):$(TAG) gattal/$(APP_NAME):latest
 
 upload:
-	docker push gattal/$(APP_NAME):$(TAG)	
+	docker push gattal/$(APP_NAME):$(TAG)
+	docker push gattal/$(APP_NAME):latest	
 
 run:
-	docker run --name cabride-api -d -v ./test/fixtures:/app/config -p $(HOST_PORT):9080 gattal/$(APP_NAME):$(TAG) sh -c "sleep 5s && ./cabride serve --config ./config/app-config-local.yaml"
+	docker run --name istio-me -d -v=$(CURDIR)/test/fixtures/config.yaml:/app/config.yaml  -p $(HOST_PORT):9080 gattal/$(APP_NAME):$(TAG) "greet"
 
 ship: init test pack upload clean	

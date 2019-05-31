@@ -40,14 +40,9 @@ func init() {
 
 func runGreetSrv() {
 
-	cfg := jaegercfg.Configuration{
-		Sampler: &jaegercfg.SamplerConfig{
-			Type:  jaeger.SamplerTypeConst,
-			Param: 1,
-		},
-		Reporter: &jaegercfg.ReporterConfig{
-			LogSpans: true,
-		},
+	cfg, err := jaegercfg.FromEnv()
+	if err != nil {
+		panic(err)
 	}
 
 	tracer, closer, err := cfg.New(
@@ -62,7 +57,7 @@ func runGreetSrv() {
 
 	// Timer Service Client Configuration
 	//var conn *grpc.ClientConn
-	conn, err := grpc.Dial(":8080",
+	conn, err := grpc.Dial("timer:8080",
 		grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(otgrpc.OpenTracingClientInterceptor(tracer)))
 	if err != nil {

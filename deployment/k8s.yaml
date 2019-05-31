@@ -1,0 +1,205 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: greeter
+  namespace: dev
+spec:
+  selector:
+    matchLabels:
+      app: istio-me
+      cmd: greet
+  template:
+    metadata:
+      labels:
+        app: istio-me
+        cmd: greet
+    spec:
+      containers:
+        - name: greeter
+          image: gattal/istio-me
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 9080
+            name: grpc-port
+          env:
+          - name: JAEGER_AGENT_HOST
+            value: jaeger-agent.istio-system
+          - name: JAEGER_AGENT_PORT
+            value: '6831'
+          - name: JAEGER_SAMPLER_PARAM
+            value: '1'
+          - name: JAEGER_REPORTER_LOG_SPANS
+            value: 'true'
+          - name: JAEGER_SAMPLER_TYPE
+            value: const
+          command:
+            - "./istio-me"
+          args:
+            - "greet"          
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timer
+  namespace: dev
+spec:
+  selector:
+    matchLabels:
+      app: istio-me
+      cmd: time
+  template:
+    metadata:
+      labels:
+        app: istio-me
+        cmd: time
+    spec:
+      containers:
+        - name: timer
+          image: gattal/istio-me
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 8080
+            name: grpc-port
+          env:
+          - name: JAEGER_AGENT_HOST
+            value: jaeger-agent.istio-system
+          - name: JAEGER_AGENT_PORT
+            value: '6831'
+          - name: JAEGER_SAMPLER_PARAM
+            value: '1'
+          - name: JAEGER_REPORTER_LOG_SPANS
+            value: 'true'
+          - name: JAEGER_SAMPLER_TYPE
+            value: const
+          command:
+            - "./istio-me"
+          args:
+            - "time"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: greeter
+  namespace: dev
+spec:
+  selector:
+    app: istio-me
+    cmd: greet
+  type: ClusterIP
+  ports:
+  - protocol: TCP
+    port: 9080
+    targetPort: 9080
+    name: grpc-port
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: timer
+  namespace: dev
+spec:
+  selector:
+    app: istio-me
+    cmd: time
+  type: ClusterIP
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+    name: grpc-port
+
+
+# ---
+# apiVersion: networking.istio.io/v1alpha3
+# kind: VirtualService
+# metadata:
+#   name: greeter
+#   namespace: dev
+# spec:
+#   hosts:
+#   - greeter
+#   http:
+#   - route:
+#     - destination:
+#         host: greeter.dev.svc.cluster.local
+#         port:
+#           number: 9080
+# ---
+# apiVersion: networking.istio.io/v1alpha3
+# kind: VirtualService
+# metadata:
+#   name: timer
+# spec:
+#   hosts:
+#   - timer
+#   http:
+#   - route:
+#     - destination:
+#         host: timer.dev.svc.cluster.local
+#         port:
+#           number: 8080
+
+# ---
+# apiVersion: networking.istio.io/v1alpha3
+# kind: VirtualService
+# metadata:
+#   name: jaeger-agent
+# spec:
+#   hosts:
+#   - jaeger-agent.istio-system
+#   http:
+#   - route:
+#     - destination:
+#         host: jaeger-agent.istio-system.svc.cluster.local
+#         port:
+#           number: 6831     
+---
+
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: istio-me-gateway
+  namespace: dev
+spec:
+  selector:
+    istio: ingressgateway # use Istio default gateway implementation
+  servers:
+  - port:
+      name: http2
+      number: 80
+      protocol: HTTP2
+    hosts:
+    - "*"
+
+---
+
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: istio-me-vs
+  namespace: dev
+spec:
+  gateways:
+  - istio-me-gateway
+  hosts:
+  - '*'
+  http:
+  - match:
+    - uri:
+        prefix: /trials.Timer
+    route:
+    - destination:
+        host: timer
+        port:
+          number: 8080
+  - match:
+    - uri:
+        prefix: /trials.Greeter
+    route:
+    - destination:
+        host: greeter
+        port:
+          number: 9080

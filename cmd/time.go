@@ -35,14 +35,9 @@ func init() {
 
 func runTimeSrv() {
 
-	cfg := jaegercfg.Configuration{
-		Sampler: &jaegercfg.SamplerConfig{
-			Type:  jaeger.SamplerTypeConst,
-			Param: 1,
-		},
-		Reporter: &jaegercfg.ReporterConfig{
-			LogSpans: true,
-		},
+	cfg, err := jaegercfg.FromEnv()
+	if err != nil {
+		panic(err)
 	}
 
 	tracer, closer, err := cfg.New(
