@@ -9,12 +9,16 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc/metadata"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	otgrpc "github.com/opentracing-contrib/go-grpc"
-	"github.com/opentracing/opentracing-go"
+	// otgrpc "github.com/opentracing-contrib/go-grpc"
+	//opentracing "github.com/opentracing/opentracing-go"
+	ot "github.com/opentracing/opentracing-go"
+	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	"github.com/spf13/cobra"
 	"github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/config"
+	// "github.com/uber/jaeger-client-go/zipkin"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 	"golang.org/x/net/context"
 	"golang.org/x/net/http2"
@@ -24,6 +28,18 @@ import (
 	"github.com/govinda-attal/istio-me/internal/handler"
 	"github.com/govinda-attal/istio-me/pkg/trials"
 )
+
+func UnaryServerMetdataTagInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		if ctxMd, ok := metadata.FromIncomingContext(ctx); ok {
+			for key, field := range ctxMd {
+				log.Println(key, field)
+			}
+		}
+		return handler(ctx, req)
+	}
+}
+
 
 // greetCmd represents the greet command
 var greetCmd = &cobra.Command{
@@ -40,6 +56,28 @@ func init() {
 
 func runGreetSrv() {
 
+	// zipkinPropagator := zipkin.NewZipkinB3HTTPHeaderPropagator()
+	// injector := jaeger.TracerOptions.Injector(opentracing.HTTPHeaders, zipkinPropagator)
+	// extractor := jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, zipkinPropagator)
+
+	// // Zipkin shares span ID between client and server spans; it must be enabled via the following option.
+	// zipkinSharedRPCSpan := jaeger.TracerOptions.ZipkinSharedRPCSpan(true)
+
+	// sender, _ := jaeger.NewUDPTransport("jaeger-agent.istio-system:5775", 0)
+	// tracer, closer := jaeger.NewTracer(
+	// 	"greeter",
+	// 	jaeger.NewConstSampler(true),
+	// 	jaeger.NewRemoteReporter(
+	// 		sender,
+	// 		jaeger.ReporterOptions.BufferFlushInterval(1*time.Second)),
+	// 	injector,
+	// 	extractor,
+	// 	zipkinSharedRPCSpan,
+	// )
+
+	// opentracing.SetGlobalTracer(tracer)
+	// defer closer.Close()
+
 	cfg, err := jaegercfg.FromEnv()
 	if err != nil {
 		panic(err)
@@ -52,23 +90,25 @@ func runGreetSrv() {
 	if err != nil {
 		panic(err)
 	}
-	opentracing.SetGlobalTracer(tracer)
+	ot.SetGlobalTracer(tracer)
 	defer closer.Close()
 
 	// Timer Service Client Configuration
 	//var conn *grpc.ClientConn
 	conn, err := grpc.Dial("timer:8080",
 		grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(otgrpc.OpenTracingClientInterceptor(tracer)))
+		grpc.WithUnaryInterceptor(grpc_opentracing.UnaryClientInterceptor(grpc_opentracing.WithTracer(tracer))))
 	if err != nil {
 		panic(err)
 	}
 	defer conn.Close()
 	tc := trials.NewTimerClient(conn)
 
-	// GRPC Server Configuration
 	var opts []grpc.ServerOption
-	opts = append(opts, grpc.UnaryInterceptor(otgrpc.OpenTracingServerInterceptor(tracer)))
+
+	opts = append(opts, 
+		grpc.UnaryInterceptor(grpc_opentracing.UnaryServerInterceptor(grpc_opentracing.WithTracer(tracer))),		
+	)
 	grpcServer := grpc.NewServer(opts...)
 	trials.RegisterGreeterServer(grpcServer, handler.NewGreeterSrv(tc))
 

@@ -53,9 +53,6 @@ build:
 	cp ./test/fixtures/config.yaml ./dist/config.yaml
 	cp ./api/*.json ./dist/api/
 
-local-providers-start:
-	docker-compose up db adminer redis swagger-ui
-
 
 serve: build
 	cd dist && ./$(APP_NAME) greet

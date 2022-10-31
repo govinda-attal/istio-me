@@ -29,12 +29,12 @@ services:
       gattal/istio-me
     environment:
       JAEGER_SERVICE_NAME: 'greeter01'
-      # JAEGER_AGENT_HOST: jaeger
-      # JAEGER_AGENT_PORT: 6831      
+      JAEGER_AGENT_HOST: jaeger
+      JAEGER_AGENT_PORT: 6831      
       JAEGER_SAMPLER_PARAM: '1'
       JAEGER_REPORTER_LOG_SPANS: 'true'
       JAEGER_SAMPLER_TYPE: const
-      JAEGER_ENDPOINT: http://jaeger:14268/api/traces
+      # JAEGER_ENDPOINT: http://jaeger:14268/api/traces
     ports: 
       - 9080:9080
     depends_on:      
@@ -56,12 +56,12 @@ services:
       gattal/istio-me
     environment: 
       JAEGER_SERVICE_NAME: 'timer01'
-      # JAEGER_AGENT_HOST: jaeger
-      # JAEGER_AGENT_PORT: 6831
+      JAEGER_AGENT_HOST: jaeger
+      JAEGER_AGENT_PORT: 6831
       JAEGER_REPORTER_LOG_SPANS: 'true'
       JAEGER_SAMPLER_PARAM: '1'
       JAEGER_SAMPLER_TYPE: const
-      JAEGER_ENDPOINT: http://jaeger:14268/api/traces
+      # JAEGER_ENDPOINT: http://jaeger:14268/api/traces
     ports: 
       - 8080:8080
     depends_on:      

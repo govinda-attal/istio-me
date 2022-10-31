@@ -4,12 +4,15 @@ import (
 	"log"
 	"os"
 
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var (
 	cfgFile string
+	zapLogger  *zap.Logger
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -39,4 +42,11 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		log.Println("Using config file:", viper.ConfigFileUsed())
 	}
+
+
+	zapLogger, _ = zap.Config{
+		Encoding:    "json",
+		Level:       zap.NewAtomicLevelAt(zapcore.DebugLevel),
+		OutputPaths: []string{"stdout"},
+	}.Build()
 }
